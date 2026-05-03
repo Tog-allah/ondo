@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Input, Card, OperatorSelector, ContactSelector } from '../../components';
 import { Colors, Gradients, detectOperator, formatPhoneNumber, formatCurrency, CHAD_COUNTRY_CODE } from '../../constants';
 import { Typography, FontFamily } from '../../constants/Typography';
+import { OperatorImages } from '../../constants/OperatorImages';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -57,7 +58,11 @@ export default function TransferScreen() {
         </View>
         {operator && (
           <View style={s.opDetected}>
-            <View style={[s.opDot,{backgroundColor: operator==='airtel'?Colors.airtel:Colors.moov}]} />
+            <Image
+              source={OperatorImages[operator].money}
+              style={{width:22,height:22}}
+              resizeMode="contain"
+            />
             <Text style={s.opText}>
               Compte {operator==='airtel'?'Airtel Money':'Moov Money'} détecté
             </Text>
@@ -128,7 +133,6 @@ const s = StyleSheet.create({
   cc:{flexDirection:'row',alignItems:'center',height:52,paddingHorizontal:12,borderWidth:1.5,borderColor:Colors.border,borderRadius:12,backgroundColor:Colors.surface,gap:6},
   ccTxt:{fontFamily:FontFamily.semiBold,fontSize:15,color:Colors.textPrimary},
   opDetected:{flexDirection:'row',alignItems:'center',gap:8,marginTop:10,padding:12,backgroundColor:Colors.surface,borderRadius:10},
-  opDot:{width:8,height:8,borderRadius:4},
   opText:{...Typography.caption,color:Colors.textSecondary},
   feeCard:{marginTop:16},
   feeRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:8},

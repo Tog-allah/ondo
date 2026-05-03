@@ -1,12 +1,12 @@
 /**
- * Custom Firebase reCAPTCHA verifier for Phone Auth.
+ * Silent/Invisible Firebase reCAPTCHA Verifier for Phone Auth.
  *
- * Replaces the deprecated `expo-firebase-recaptcha` package which is
- * incompatible with Expo SDK 54+ (uses removed legacy module APIs).
+ * This component renders a HIDDEN WebView (0x0 pixels) that auto-solves
+ * the reCAPTCHA challenge without any user interaction.
  *
- * This component renders an invisible reCAPTCHA v2 inside a WebView and
- * exposes a ref that implements Firebase's `ApplicationVerifier` interface
- * so it can be passed directly to `PhoneAuthProvider.verifyPhoneNumber()`.
+ * Usage:
+ *   <FirebaseRecaptchaVerifier ref={recaptchaRef} firebaseConfig={config} />
+ *   // Then: await signInWithPhoneNumber(auth, phone, recaptchaRef.current)
  */
 import React, {
   forwardRef,
@@ -15,7 +15,7 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-import { Modal, View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 // ---------------------------------------------------------------------------
@@ -27,22 +27,18 @@ export interface RecaptchaVerifierRef {
   type: 'recaptcha';
   /**
    * Triggers the reCAPTCHA challenge and resolves with the token.
-   * Called internally by `PhoneAuthProvider.verifyPhoneNumber()`.
+   * Called internally by `signInWithPhoneNumber()`.
    */
   verify: () => Promise<string>;
 }
 
 interface Props {
-  /** Firebase web config (must include `apiKey` and `authDomain`). */
+  /** Firebase web config — must have apiKey & authDomain from a WEB app. */
   firebaseConfig: {
     apiKey: string;
     authDomain: string;
     [key: string]: any;
   };
-  /** If true, tries invisible reCAPTCHA first. Defaults to true. */
-  invisible?: boolean;
-  /** Called when the WebView page finishes loading. */
-  onLoad?: () => void;
   /** Called on error. */
   onError?: (error: any) => void;
 }
@@ -52,29 +48,50 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 const FirebaseRecaptchaVerifier = forwardRef<RecaptchaVerifierRef, Props>(
-  ({ firebaseConfig, invisible = true, onLoad, onError }, ref) => {
+  ({ firebaseConfig, onError }, ref) => {
     const webViewRef = useRef<WebView>(null);
-    const [visible, setVisible] = useState(false);
+    const [ready, setReady] = useState(false);
 
     // Promise resolve/reject stored across the verify() ↔ onMessage boundary
     const resolveRef = useRef<((token: string) => void) | null>(null);
     const rejectRef = useRef<((err: Error) => void) | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Build the silent HTML page
+    const html = buildSilentRecaptchaHtml(firebaseConfig);
 
     // -----------------------------------------------------------------------
-    // Build the HTML that loads Firebase Auth + reCAPTCHA
-    // -----------------------------------------------------------------------
-    const html = buildRecaptchaHtml(firebaseConfig, invisible);
-
-    // -----------------------------------------------------------------------
-    // Expose the ApplicationVerifier‐compatible ref
+    // Expose the ApplicationVerifier-compatible ref
     // -----------------------------------------------------------------------
     useImperativeHandle(ref, () => ({
       type: 'recaptcha' as const,
+      // No-op reset — Firebase Web SDK calls this after signInWithPhoneNumber
+      _reset: () => {},
       verify: () =>
         new Promise<string>((resolve, reject) => {
           resolveRef.current = resolve;
           rejectRef.current = reject;
-          setVisible(true); // open the modal → mount the WebView
+
+          // Timeout after 30s
+          timeoutRef.current = setTimeout(() => {
+            reject(new Error('reCAPTCHA verification timed out (30s)'));
+            resolveRef.current = null;
+            rejectRef.current = null;
+          }, 30000);
+
+          // Tell the WebView to trigger verification
+          webViewRef.current?.injectJavaScript(`
+            (function(){
+              if (window.__triggerVerify) {
+                window.__triggerVerify();
+              } else {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'error',
+                  message: 'reCAPTCHA not ready yet'
+                }));
+              }
+            })(); true;
+          `);
         }),
     }));
 
@@ -87,96 +104,58 @@ const FirebaseRecaptchaVerifier = forwardRef<RecaptchaVerifierRef, Props>(
           const data = JSON.parse(event.nativeEvent.data);
 
           switch (data.type) {
-            case 'load':
-              onLoad?.();
-              // Trigger the invisible verification immediately
-              webViewRef.current?.injectJavaScript(`
-                (function(){
-                  window.dispatchEvent(new MessageEvent('message', {data:{verify:true}}));
-                })(); true;
-              `);
+            case 'ready':
+              // reCAPTCHA widget is rendered and ready
+              setReady(true);
               break;
 
-            case 'verify':
+            case 'token':
+              // Got the reCAPTCHA token — resolve the promise
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
               resolveRef.current?.(data.token);
               resolveRef.current = null;
               rejectRef.current = null;
-              setVisible(false);
               break;
 
             case 'error':
-              rejectRef.current?.(new Error(data.message ?? 'reCAPTCHA error'));
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+              const errorMsg = data.message ?? 'reCAPTCHA error';
+              console.error('[reCAPTCHA]', errorMsg);
+              rejectRef.current?.(new Error(errorMsg));
               resolveRef.current = null;
               rejectRef.current = null;
-              setVisible(false);
               onError?.(data);
-              break;
-
-            case 'cancel':
-              rejectRef.current?.(new Error('reCAPTCHA cancelled'));
-              resolveRef.current = null;
-              rejectRef.current = null;
-              setVisible(false);
               break;
           }
         } catch {
           // ignore malformed messages
         }
       },
-      [onLoad, onError],
+      [onError],
     );
 
-    const handleCancel = () => {
-      rejectRef.current?.(new Error('reCAPTCHA cancelled by user'));
-      resolveRef.current = null;
-      rejectRef.current = null;
-      setVisible(false);
-    };
-
     // -----------------------------------------------------------------------
-    // Render
+    // Render — completely hidden, no visual UI
     // -----------------------------------------------------------------------
     return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCancel}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Vérification de sécurité</Text>
-              <TouchableOpacity onPress={handleCancel} style={styles.closeBtn}>
-                <Text style={styles.closeTxt}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.webviewContainer}>
-              <WebView
-                ref={webViewRef}
-                javaScriptEnabled
-                originWhitelist={['*']}
-                mixedContentMode="always"
-                source={{ html, baseUrl: `https://${firebaseConfig.authDomain}` }}
-                onMessage={handleMessage}
-                onError={(e) => {
-                  rejectRef.current?.(new Error(e.nativeEvent.description));
-                  resolveRef.current = null;
-                  rejectRef.current = null;
-                  setVisible(false);
-                  onError?.(e.nativeEvent);
-                }}
-                style={styles.webview}
-              />
-              <ActivityIndicator
-                style={StyleSheet.absoluteFill}
-                size="large"
-                color="#009A44"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <View style={styles.hidden} pointerEvents="none">
+        <WebView
+          ref={webViewRef}
+          javaScriptEnabled
+          originWhitelist={['*']}
+          mixedContentMode="always"
+          source={{ html, baseUrl: `https://${firebaseConfig.authDomain}` }}
+          onMessage={handleMessage}
+          onError={(e) => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            rejectRef.current?.(new Error(e.nativeEvent.description));
+            resolveRef.current = null;
+            rejectRef.current = null;
+            onError?.(e.nativeEvent);
+          }}
+          style={styles.webview}
+        />
+      </View>
     );
   },
 );
@@ -185,59 +164,65 @@ FirebaseRecaptchaVerifier.displayName = 'FirebaseRecaptchaVerifier';
 export default FirebaseRecaptchaVerifier;
 
 // ---------------------------------------------------------------------------
-// HTML builder
+// HTML builder — fully silent invisible reCAPTCHA
 // ---------------------------------------------------------------------------
 
-function buildRecaptchaHtml(
+function buildSilentRecaptchaHtml(
   config: { apiKey: string; authDomain: string; [k: string]: any },
-  invisible: boolean,
 ): string {
-  const siteKey = config.apiKey; // Firebase uses the API key as site key for reCAPTCHA
-  const size = invisible ? 'invisible' : 'normal';
-
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    body{display:flex;justify-content:center;align-items:center;
-         min-height:100vh;margin:0;background:transparent;overflow:hidden}
-    #recaptcha-container{transform:scale(0.95);transform-origin:center}
+    body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+    #recaptcha-container { position: absolute; top: -9999px; left: -9999px; }
   </style>
 </head>
 <body>
   <div id="recaptcha-container"></div>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script>
     var config = ${JSON.stringify(config)};
-    firebase.initializeApp(config);
 
-    var sent = false;
-    function post(obj){ window.ReactNativeWebView.postMessage(JSON.stringify(obj)); }
+    function post(obj) {
+      window.ReactNativeWebView.postMessage(JSON.stringify(obj));
+    }
 
     try {
-      var verifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-        size: '${size}',
-        callback: function(token) {
-          if(!sent){ sent=true; post({type:'verify',token:token}); }
-        },
-        'expired-callback': function() {
-          post({type:'error',message:'reCAPTCHA expired'});
+      firebase.initializeApp(config);
+
+      // Expose a trigger function for programmatic verification
+      window.__triggerVerify = function() {
+        try {
+          // Create the verifier *on demand* to avoid early expiration
+          var verifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            size: 'invisible',
+            callback: function(token) {
+              post({ type: 'token', token: token });
+            },
+            'expired-callback': function() {
+              post({ type: 'error', message: 'reCAPTCHA token expired' });
+            }
+          });
+
+          verifier.verify().catch(function(err) {
+            // Only report actual errors, ignore expected DOM conflicts on rapid resets
+            post({ type: 'error', message: 'verify() failed: ' + (err.message || err) });
+          });
+        } catch(err) {
+          post({ type: 'error', message: 'verify() setup failed: ' + (err.message || err) });
         }
-      });
+      };
 
-      verifier.render().then(function() {
-        post({type:'load'});
-      });
+      // Tell React Native we are ready to receive verifications
+      post({ type: 'ready' });
 
-      // Listen for programmatic verify trigger
-      window.addEventListener('message', function(e) {
-        if(e.data && e.data.verify) { verifier.verify(); }
-      });
     } catch(err) {
-      post({type:'error',message:err.message||'reCAPTCHA init failed'});
+      post({ type: 'error', message: 'init failed: ' + (err.message || err) });
     }
   </script>
 </body>
@@ -245,56 +230,20 @@ function buildRecaptchaHtml(
 }
 
 // ---------------------------------------------------------------------------
-// Styles
+// Styles — component is completely invisible (0x0)
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+  hidden: {
+    width: 0,
+    height: 0,
     overflow: 'hidden',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  closeTxt: {
-    fontSize: 18,
-    color: '#999',
-  },
-  webviewContainer: {
-    height: 400,
-    width: '100%',
+    opacity: 0,
+    position: 'absolute',
   },
   webview: {
-    flex: 1,
-    backgroundColor: 'transparent',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
 });

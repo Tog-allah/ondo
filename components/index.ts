@@ -5,3 +5,4 @@ export { Skeleton, TransactionSkeleton } from './Skeleton';
 export { OperatorBadge, OperatorSelector } from './OperatorBadge';
 export { SuccessAnimation, PulsingDot } from './Animations';
 export { ContactSelector } from './ContactSelector';
+export { ParticleCelebration } from './ParticleCelebration';

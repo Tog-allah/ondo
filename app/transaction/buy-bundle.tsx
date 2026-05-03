@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { Button, Input, Card, OperatorBadge, ContactSelector } from '../../compo
 import { Colors, Gradients, detectOperator, formatPhoneNumber, formatCurrency, CHAD_COUNTRY_CODE } from '../../constants';
 import { Typography, FontFamily } from '../../constants/Typography';
 import { Layout } from '../../constants/Layout';
+import { OperatorImages } from '../../constants/OperatorImages';
 import { getBundles, Bundle } from '../../services/bundleService';
 
 type DurationFilter = 'all' | 'jour' | 'semaine' | 'mois';
@@ -101,10 +102,17 @@ export default function BuyBundleScreen() {
 
         {/* Operator filter */}
         <View style={s.opRow}>
-          {([['all','Tous'],['airtel','Airtel'],['moov','Moov']] as const).map(([k,l]) => (
+          <TouchableOpacity onPress={() => setOpFilter('all')}
+            style={[s.opBtn, opFilter==='all' && s.opBtnA]}>
+            <Text style={[s.opTxt, opFilter==='all' && s.opTxtA]}>Tous</Text>
+          </TouchableOpacity>
+          {(['airtel', 'moov'] as const).map((k) => (
             <TouchableOpacity key={k} onPress={() => setOpFilter(k)}
               style={[s.opBtn, opFilter===k && s.opBtnA]}>
-              <Text style={[s.opTxt, opFilter===k && s.opTxtA]}>{l}</Text>
+              <Image source={OperatorImages[k].logo} style={{width:18,height:18}} resizeMode="contain" />
+              <Text style={[s.opTxt, opFilter===k && s.opTxtA]}>
+                {k === 'airtel' ? 'Airtel' : 'Moov'}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -135,7 +143,7 @@ export default function BuyBundleScreen() {
                 <View style={{flex:1}}>
                   <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
                     <Text style={s.bName}>{b.name}</Text>
-                    <Text style={[s.bOp,{color:c}]}>{b.operator==='airtel'?'Airtel':'Moov'}</Text>
+                    <Image source={OperatorImages[b.operator].logo} style={{width:16,height:16}} resizeMode="contain" />
                   </View>
                   <Text style={s.bDesc}>{b.description} • {b.validity}</Text>
                 </View>
@@ -180,7 +188,7 @@ const s = StyleSheet.create({
   cc:{flexDirection:'row',alignItems:'center',height:52,paddingHorizontal:12,borderWidth:1.5,borderColor:Colors.border,borderRadius:12,backgroundColor:Colors.surface,gap:6},
   ccTxt:{fontFamily:FontFamily.semiBold,fontSize:15,color:Colors.textPrimary},
   opRow:{flexDirection:'row',gap:8,marginTop:20,marginBottom:12},
-  opBtn:{paddingHorizontal:14,paddingVertical:7,borderRadius:20,backgroundColor:Colors.surface,borderWidth:1,borderColor:Colors.border},
+  opBtn:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:14,paddingVertical:7,borderRadius:20,backgroundColor:Colors.surface,borderWidth:1,borderColor:Colors.border},
   opBtnA:{backgroundColor:Colors.primary,borderColor:Colors.primary},
   opTxt:{...Typography.captionMedium,color:Colors.textSecondary},
   opTxtA:{color:Colors.white},

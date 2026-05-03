@@ -10,12 +10,14 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Typography, FontFamily } from '../constants/Typography';
 import { Layout } from '../constants/Layout';
+import { OperatorImages } from '../constants/OperatorImages';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -158,6 +160,12 @@ export function ContactSelector({ visible, onClose, onSelect }: ContactSelectorP
     return '';
   };
 
+  const getOperatorKey = (phone: string): 'airtel' | 'moov' | null => {
+    if (phone.startsWith('6')) return 'airtel';
+    if (phone.startsWith('9')) return 'moov';
+    return null;
+  };
+
   const formatDisplay = (phone: string) => {
     if (phone.length !== 8) return phone;
     return `${phone.slice(0, 2)} ${phone.slice(2, 4)} ${phone.slice(4, 6)} ${phone.slice(6, 8)}`;
@@ -177,6 +185,13 @@ export function ContactSelector({ visible, onClose, onSelect }: ContactSelectorP
         <View style={styles.phoneRow}>
           <Text style={styles.contactPhone}>{formatDisplay(item.phone)}</Text>
           <View style={[styles.operatorTag, { backgroundColor: getOperatorColor(item.phone) + '15' }]}>
+            {getOperatorKey(item.phone) && (
+              <Image
+                source={OperatorImages[getOperatorKey(item.phone)!].logo}
+                style={{width:14,height:14}}
+                resizeMode="contain"
+              />
+            )}
             <Text style={[styles.operatorTagText, { color: getOperatorColor(item.phone) }]}>
               {getOperatorName(item.phone)}
             </Text>
@@ -380,6 +395,9 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   operatorTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,

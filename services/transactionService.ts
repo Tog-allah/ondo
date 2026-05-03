@@ -1,24 +1,12 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  limit as firestoreLimit,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import firestoreModule, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db, functions } from './firebase';
 
 // ── Types ───────────────────────────────────────────────────
 
 export type TransactionType = 'credit' | 'bundle' | 'transfer';
 export type TransactionStatus = 'pending' | 'success' | 'failed';
+
+export type Timestamp = FirebaseFirestoreTypes.Timestamp;
 
 export interface Transaction {
   id: string;
@@ -80,11 +68,11 @@ export const createTransaction = async (
     bundleValidity: data.bundleValidity ?? null,
     walletDeduction: data.walletDeduction ?? 0,
     airtelTxId: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    createdAt: firestoreModule.FieldValue.serverTimestamp(),
+    updatedAt: firestoreModule.FieldValue.serverTimestamp(),
   };
 
-  const docRef = await addDoc(collection(db, TRANSACTIONS_COLLECTION), txData);
+  const docRef = await db.collection(TRANSACTIONS_COLLECTION).add(txData);
   return docRef.id;
 };
 
@@ -94,10 +82,9 @@ export const createTransaction = async (
 export const getTransaction = async (
   txId: string
 ): Promise<Transaction | null> => {
-  const txRef = doc(db, TRANSACTIONS_COLLECTION, txId);
-  const snapshot = await getDoc(txRef);
+  const snapshot = await db.collection(TRANSACTIONS_COLLECTION).doc(txId).get();
 
-  if (!snapshot.exists()) return null;
+  if (!snapshot.exists) return null;
   return { id: snapshot.id, ...snapshot.data() } as Transaction;
 };
 
@@ -108,21 +95,19 @@ export const getTransactions = async (
   userId: string,
   filters?: TransactionFilters
 ): Promise<Transaction[]> => {
-  const constraints: any[] = [
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-  ];
+  let query: FirebaseFirestoreTypes.Query = db
+    .collection(TRANSACTIONS_COLLECTION)
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc');
 
   if (filters?.type) {
-    constraints.push(where('type', '==', filters.type));
+    query = query.where('type', '==', filters.type);
   }
   if (filters?.status) {
-    constraints.push(where('status', '==', filters.status));
+    query = query.where('status', '==', filters.status);
   }
 
-  const q = query(collection(db, TRANSACTIONS_COLLECTION), ...constraints);
-  const snapshot = await getDocs(q);
-
+  const snapshot = await query.get();
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
@@ -134,16 +119,15 @@ export const getTransactions = async (
  */
 export const getRecentTransactions = async (
   userId: string,
-  limit: number = 5
+  count: number = 5
 ): Promise<Transaction[]> => {
-  const q = query(
-    collection(db, TRANSACTIONS_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    firestoreLimit(limit)
-  );
+  const snapshot = await db
+    .collection(TRANSACTIONS_COLLECTION)
+    .where('userId', '==', userId)
+    .orderBy('createdAt', 'desc')
+    .limit(count)
+    .get();
 
-  const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
@@ -158,17 +142,16 @@ export const updateTransactionStatus = async (
   status: TransactionStatus,
   airtelTxId?: string
 ): Promise<void> => {
-  const txRef = doc(db, TRANSACTIONS_COLLECTION, txId);
-  const updateData: any = {
+  const updateData: Record<string, any> = {
     status,
-    updatedAt: serverTimestamp(),
+    updatedAt: firestoreModule.FieldValue.serverTimestamp(),
   };
 
   if (airtelTxId) {
     updateData.airtelTxId = airtelTxId;
   }
 
-  await updateDoc(txRef, updateData);
+  await db.collection(TRANSACTIONS_COLLECTION).doc(txId).update(updateData);
 };
 
 /**
@@ -201,7 +184,7 @@ export const processPaymentCloud = async (
   operator: 'airtel' | 'moov',
   type: TransactionType
 ): Promise<any> => {
-  const processPaymentFn = httpsCallable(functions, 'processPayment');
+  const processPaymentFn = functions.httpsCallable('processPayment');
   const result = await processPaymentFn({
     transactionId,
     phone,
@@ -211,4 +194,3 @@ export const processPaymentCloud = async (
   });
   return result.data;
 };
-

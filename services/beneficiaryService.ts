@@ -1,20 +1,9 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  deleteDoc,
-  getDocs,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  limit as firestoreLimit,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
+import firestoreModule, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from './firebase';
 
 // ── Types ───────────────────────────────────────────────────
+
+export type Timestamp = FirebaseFirestoreTypes.Timestamp;
 
 export interface Beneficiary {
   id: string;
@@ -52,12 +41,12 @@ export const addBeneficiary = async (
     return existing.id;
   }
 
-  const docRef = await addDoc(collection(db, BENEFICIARIES_COLLECTION), {
+  const docRef = await db.collection(BENEFICIARIES_COLLECTION).add({
     userId: data.userId,
     name: data.name,
     phone: data.phone,
     operator: data.operator,
-    lastUsed: serverTimestamp(),
+    lastUsed: firestoreModule.FieldValue.serverTimestamp(),
     usageCount: 1,
   });
 
@@ -71,13 +60,12 @@ export const findBeneficiaryByPhone = async (
   userId: string,
   phone: string
 ): Promise<Beneficiary | null> => {
-  const q = query(
-    collection(db, BENEFICIARIES_COLLECTION),
-    where('userId', '==', userId),
-    where('phone', '==', phone)
-  );
+  const snapshot = await db
+    .collection(BENEFICIARIES_COLLECTION)
+    .where('userId', '==', userId)
+    .where('phone', '==', phone)
+    .get();
 
-  const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
 
   const doc = snapshot.docs[0];
@@ -90,13 +78,12 @@ export const findBeneficiaryByPhone = async (
 export const getBeneficiaries = async (
   userId: string
 ): Promise<Beneficiary[]> => {
-  const q = query(
-    collection(db, BENEFICIARIES_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('lastUsed', 'desc')
-  );
+  const snapshot = await db
+    .collection(BENEFICIARIES_COLLECTION)
+    .where('userId', '==', userId)
+    .orderBy('lastUsed', 'desc')
+    .get();
 
-  const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
@@ -108,16 +95,15 @@ export const getBeneficiaries = async (
  */
 export const getRecentBeneficiaries = async (
   userId: string,
-  limit: number = 5
+  count: number = 5
 ): Promise<Beneficiary[]> => {
-  const q = query(
-    collection(db, BENEFICIARIES_COLLECTION),
-    where('userId', '==', userId),
-    orderBy('lastUsed', 'desc'),
-    firestoreLimit(limit)
-  );
+  const snapshot = await db
+    .collection(BENEFICIARIES_COLLECTION)
+    .where('userId', '==', userId)
+    .orderBy('lastUsed', 'desc')
+    .limit(count)
+    .get();
 
-  const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
@@ -130,15 +116,13 @@ export const getRecentBeneficiaries = async (
 export const updateBeneficiaryUsage = async (
   benId: string
 ): Promise<void> => {
-  const benRef = doc(db, BENEFICIARIES_COLLECTION, benId);
-  const snapshot = await getDocs(
-    query(collection(db, BENEFICIARIES_COLLECTION), where('__name__', '==', benId))
-  );
+  const benRef = db.collection(BENEFICIARIES_COLLECTION).doc(benId);
+  const snapshot = await benRef.get();
 
-  if (!snapshot.empty) {
-    const currentCount = snapshot.docs[0].data().usageCount || 0;
-    await updateDoc(benRef, {
-      lastUsed: serverTimestamp(),
+  if (snapshot.exists()) {
+    const currentCount = snapshot.data()?.usageCount || 0;
+    await benRef.update({
+      lastUsed: firestoreModule.FieldValue.serverTimestamp(),
       usageCount: currentCount + 1,
     });
   }
@@ -151,14 +135,12 @@ export const updateBeneficiaryName = async (
   benId: string,
   name: string
 ): Promise<void> => {
-  const benRef = doc(db, BENEFICIARIES_COLLECTION, benId);
-  await updateDoc(benRef, { name });
+  await db.collection(BENEFICIARIES_COLLECTION).doc(benId).update({ name });
 };
 
 /**
  * Remove a beneficiary.
  */
 export const removeBeneficiary = async (benId: string): Promise<void> => {
-  const benRef = doc(db, BENEFICIARIES_COLLECTION, benId);
-  await deleteDoc(benRef);
+  await db.collection(BENEFICIARIES_COLLECTION).doc(benId).delete();
 };

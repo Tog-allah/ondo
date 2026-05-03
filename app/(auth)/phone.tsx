@@ -11,12 +11,9 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PhoneAuthProvider } from 'firebase/auth';
+// Native Firebase Auth used via services/firebase
 
 import { Button, Input, OperatorBadge } from '../../components';
-import FirebaseRecaptchaVerifier, {
-  type RecaptchaVerifierRef,
-} from '../../components/FirebaseRecaptchaVerifier';
 import {
   Colors,
   Gradients,
@@ -26,8 +23,8 @@ import {
 } from '../../constants';
 import { Typography, FontFamily } from '../../constants/Typography';
 import { Layout } from '../../constants/Layout';
+
 import { auth } from '../../services/firebase';
-import app from '../../services/firebase';
 
 export default function PhoneScreen() {
   const router = useRouter();
@@ -35,8 +32,6 @@ export default function PhoneScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const operator = detectOperator(phone);
-
-  const recaptchaVerifier = useRef<RecaptchaVerifierRef>(null);
 
   const handlePhoneChange = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
@@ -59,27 +54,36 @@ export default function PhoneScreen() {
     try {
       setIsLoading(true);
       setError('');
-      
-      const fullPhoneNumber = CHAD_COUNTRY_CODE + phone;
-      const phoneProvider = new PhoneAuthProvider(auth);
-      
-      const verificationId = await phoneProvider.verifyPhoneNumber(
-        fullPhoneNumber,
-        recaptchaVerifier.current
-      );
 
-      // Successfully sent SMS
+      const fullPhoneNumber = CHAD_COUNTRY_CODE + phone;
+
+      const confirmationResult = await auth.signInWithPhoneNumber(fullPhoneNumber);
+
+      // Successfully sent SMS — store verificationId and navigate
       router.push({
         pathname: '/(auth)/otp',
-        params: { phone: fullPhoneNumber, verificationId },
+        params: {
+          phone: fullPhoneNumber,
+          verificationId: confirmationResult.verificationId,
+        },
       });
     } catch (err: any) {
-      console.error('Phone Auth Error:', err);
-      // Determine what to show to the user
-      if (err.message?.includes('captcha')) {
-        setError('Échec de la validation Captcha. Réessayez.');
+      console.error('Phone Auth Error:', err?.message || 'No message', err?.code || 'No code', err);
+
+      const code = err?.code || '';
+      const message = err?.message || '';
+
+      if (code === 'auth/invalid-phone-number' || message.includes('invalid')) {
+        setError('Numéro de téléphone invalide. Vérifiez le format (+235XXXXXXXX).');
+      } else if (code === 'auth/too-many-requests' || message.includes('throttle')) {
+        setError('Trop de tentatives. Veuillez réessayer dans quelques minutes.');
+      } else if (code === 'auth/quota-exceeded') {
+        setError('Quota SMS dépassé. Réessayez plus tard.');
+      } else if (message.includes('reCAPTCHA') || message.includes('verify')) {
+        setError('Vérification de sécurité échouée. Réessayez.');
       } else {
-        setError('Impossible d\'envoyer le SMS. Vérifiez votre numéro ou votre connexion.');
+        const rawErr = err?.message || JSON.stringify(err);
+        setError(`Erreur technique: ${rawErr}`);
       }
     } finally {
       setIsLoading(false);
@@ -91,12 +95,7 @@ export default function PhoneScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Invisible Recaptcha Verifier */}
-      <FirebaseRecaptchaVerifier
-        ref={recaptchaVerifier}
-        firebaseConfig={app.options as any}
-        invisible={true}
-      />
+      {/* Native SDK handles verification directly without WebView */}
 
       {/* Header */}
       <LinearGradient
@@ -157,6 +156,7 @@ export default function PhoneScreen() {
           />
           <Text style={styles.infoText}>
             Nous allons vous envoyer un code par SMS pour vérifier votre numéro.
+            La vérification de sécurité est automatique.
           </Text>
         </View>
       </View>
@@ -166,7 +166,7 @@ export default function PhoneScreen() {
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Envoi du SMS...</Text>
+            <Text style={styles.loadingText}>Envoi du code SMS...</Text>
           </View>
         ) : (
           <Button

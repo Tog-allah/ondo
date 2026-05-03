@@ -3,17 +3,20 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import { Layout } from '../constants/Layout';
+import { OperatorImages } from '../constants/OperatorImages';
 
 interface OperatorBadgeProps {
   operator: 'airtel' | 'moov' | null;
   size?: 'small' | 'medium' | 'large';
   showLabel?: boolean;
+  variant?: 'logo' | 'money';
 }
 
 export const OperatorBadge: React.FC<OperatorBadgeProps> = ({
   operator,
   size = 'medium',
   showLabel = true,
+  variant = 'logo',
 }) => {
   if (!operator) return null;
 
@@ -22,13 +25,11 @@ export const OperatorBadge: React.FC<OperatorBadgeProps> = ({
       color: Colors.airtel,
       bgColor: Colors.airtel + '15',
       label: 'Airtel',
-      icon: '📱',
     },
     moov: {
       color: Colors.moov,
       bgColor: Colors.moov + '15',
       label: 'Moov Africa',
-      icon: '📱',
     },
   };
 
@@ -36,6 +37,7 @@ export const OperatorBadge: React.FC<OperatorBadgeProps> = ({
   const sizeMap = { small: 24, medium: 32, large: 44 };
   const iconSize = sizeMap[size];
   const fontSize = size === 'small' ? 10 : size === 'medium' ? 12 : 14;
+  const imgSource = OperatorImages[operator][variant];
 
   return (
     <View style={styles.container}>
@@ -51,7 +53,11 @@ export const OperatorBadge: React.FC<OperatorBadgeProps> = ({
           },
         ]}
       >
-        <Text style={{ fontSize: iconSize * 0.5 }}>{c.icon}</Text>
+        <Image
+          source={imgSource}
+          style={{ width: iconSize * 0.7, height: iconSize * 0.7 }}
+          resizeMode="contain"
+        />
       </View>
       {showLabel && (
         <Text
@@ -79,6 +85,7 @@ export const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         const isSelected = selected === op;
         const color = op === 'airtel' ? Colors.airtel : Colors.moov;
         const label = op === 'airtel' ? 'Airtel Money' : 'Moov Money';
+        const imgSource = OperatorImages[op].money;
 
         return (
           <View
@@ -105,6 +112,11 @@ export const OperatorSelector: React.FC<OperatorSelectorProps> = ({
                 />
               )}
             </View>
+            <Image
+              source={imgSource}
+              style={styles.selectorLogo}
+              resizeMode="contain"
+            />
             <Text
               style={[
                 styles.selectorLabel,
@@ -158,6 +170,10 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  selectorLogo: {
+    width: 28,
+    height: 28,
   },
   selectorLabel: {
     ...Typography.bodyMedium,

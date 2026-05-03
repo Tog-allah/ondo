@@ -65,13 +65,13 @@ export const Button: React.FC<ButtonProps> = ({
         style={[fullWidth && { width: '100%' }, style]}
       >
         <LinearGradient
-          colors={isDisabled ? ['#B39DDB', '#9575CD'] : [...Gradients.primary]}
+          colors={isDisabled ? ['#D4A574', '#B8915F'] : [...Gradients.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[
             styles.base,
             { height: getHeight(), borderRadius: Layout.radius.lg },
-            !isDisabled && Shadows.purple,
+            !isDisabled && Shadows.amber,
           ]}
         >
           {loading ? (
@@ -90,7 +90,7 @@ export const Button: React.FC<ButtonProps> = ({
   }
 
   const variantStyles: Record<string, { bg: string; text: string; border?: string }> = {
-    secondary: { bg: Colors.primaryLight + '15', text: Colors.primary },
+    secondary: { bg: Colors.surfaceWarm, text: Colors.primary },
     outline: { bg: 'transparent', text: Colors.primary, border: Colors.primary },
     ghost: { bg: 'transparent', text: Colors.primary },
     danger: { bg: Colors.errorLight, text: Colors.error },

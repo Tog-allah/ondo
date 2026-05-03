@@ -9,6 +9,7 @@ import { Button, Input, Card, OperatorBadge, ContactSelector } from '../../compo
 import { Colors, Gradients, detectOperator, formatPhoneNumber, formatCurrency, CHAD_COUNTRY_CODE } from '../../constants';
 import { Typography, FontFamily } from '../../constants/Typography';
 import { Layout } from '../../constants/Layout';
+import { useApp } from '../../contexts/AppContext';
 
 const quickAmounts = [500, 1000, 2000, 3000, 5000, 10000];
 
@@ -18,7 +19,7 @@ export default function BuyCreditScreen() {
   const [amount, setAmount] = useState('');
   const [useWallet, setUseWallet] = useState(true);
   const [showContacts, setShowContacts] = useState(false);
-  const walletBalance = 3500;
+  const { walletBalance } = useApp();
   const operator = detectOperator(phone);
 
   const handlePhoneChange = (text: string) => {

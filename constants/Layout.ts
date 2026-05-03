@@ -20,7 +20,8 @@ export const Layout = {
     md: 12,
     lg: 16,
     xl: 24,
-    full: 999,
+    xxl: 32, // Pour les courbes header
+    full: 9999,
   },
 
   spacing: {
@@ -51,31 +52,38 @@ export const Layout = {
 
 export const Shadows = {
   sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
+    shadowColor: '#D97706', // Ombre ambre
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  lg: {
-    shadowColor: '#000',
+  md: {
+    shadowColor: '#D97706', // Ombre ambre
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  purple: {
-    shadowColor: '#6C2BD9',
+  lg: {
+    shadowColor: '#B45309', // Ombre ambre foncé
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  amber: {
+    shadowColor: '#D97706',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
     elevation: 10,
+  },
+  green: {
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
 };

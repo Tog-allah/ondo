@@ -1,12 +1,8 @@
-import {
-  signOut as firebaseSignOut,
-  onAuthStateChanged as firebaseOnAuthStateChanged,
-  User,
-  PhoneAuthProvider,
-  signInWithCredential,
-} from 'firebase/auth';
+import authModule, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import * as SecureStore from 'expo-secure-store';
 import { auth } from './firebase';
+
+export type User = FirebaseAuthTypes.User;
 
 const PHONE_KEY = 'ondo_user_phone';
 
@@ -18,8 +14,8 @@ const PHONE_KEY = 'ondo_user_phone';
  * @param code The 6-digit SMS code
  */
 export const confirmPhoneOtp = async (verificationId: string, code: string): Promise<User> => {
-  const credential = PhoneAuthProvider.credential(verificationId, code);
-  const result = await signInWithCredential(auth, credential);
+  const credential = authModule.PhoneAuthProvider.credential(verificationId, code);
+  const result = await auth.signInWithCredential(credential);
   return result.user;
 };
 
@@ -28,7 +24,7 @@ export const confirmPhoneOtp = async (verificationId: string, code: string): Pro
  */
 export const signOut = async (): Promise<void> => {
   await SecureStore.deleteItemAsync(PHONE_KEY);
-  await firebaseSignOut(auth);
+  await auth.signOut();
 };
 
 /**
@@ -44,7 +40,7 @@ export const getCurrentUser = (): User | null => {
 export const onAuthStateChanged = (
   callback: (user: User | null) => void
 ): (() => void) => {
-  return firebaseOnAuthStateChanged(auth, callback);
+  return auth.onAuthStateChanged(callback);
 };
 
 // ── Phone Storage ───────────────────────────────────────────

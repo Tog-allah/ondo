@@ -1,6 +1,7 @@
 export { Colors, Gradients } from './Colors';
 export { Typography, FontFamily, FontSize } from './Typography';
 export { Layout, Shadows } from './Layout';
+export { OperatorImages } from './OperatorImages';
 
 // Chad phone validation
 export const CHAD_COUNTRY_CODE = '+235';

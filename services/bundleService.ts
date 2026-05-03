@@ -1,18 +1,11 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-} from 'firebase/firestore';
+import firestoreModule, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from './firebase';
 
 // ── Types ───────────────────────────────────────────────────
 
 export type BundleCategory = 'data' | 'voice' | 'sms' | 'combo';
+
+export type Timestamp = FirebaseFirestoreTypes.Timestamp;
 
 export interface Bundle {
   id: string;
@@ -172,18 +165,18 @@ export const getBundles = async (
   operatorFilter?: 'airtel' | 'moov',
   categoryFilter?: BundleCategory
 ): Promise<Bundle[]> => {
-  const constraints: any[] = [orderBy('price', 'asc')];
+  let query: FirebaseFirestoreTypes.Query = db.collection(BUNDLES_COLLECTION);
 
   if (operatorFilter) {
-    constraints.unshift(where('operator', '==', operatorFilter));
+    query = query.where('operator', '==', operatorFilter);
   }
   if (categoryFilter) {
-    constraints.unshift(where('category', '==', categoryFilter));
+    query = query.where('category', '==', categoryFilter);
   }
 
-  const q = query(collection(db, BUNDLES_COLLECTION), ...constraints);
-  const snapshot = await getDocs(q);
+  query = query.orderBy('price', 'asc');
 
+  const snapshot = await query.get();
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
@@ -199,12 +192,15 @@ export const seedBundles = async (): Promise<number> => {
 
   for (const bundle of DEFAULT_BUNDLES) {
     const docId = `${bundle.operator}_${bundle.name.toLowerCase().replace(/\s+/g, '_')}`;
-    const docRef = doc(db, BUNDLES_COLLECTION, docId);
+    const docRef = db.collection(BUNDLES_COLLECTION).doc(docId);
 
-    await setDoc(docRef, {
-      ...bundle,
-      updatedAt: Timestamp.now(),
-    }, { merge: true });
+    await docRef.set(
+      {
+        ...bundle,
+        updatedAt: firestoreModule.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     created++;
   }

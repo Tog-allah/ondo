@@ -1,22 +1,30 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Button } from '../../components';
-import { Colors } from '../../constants/Colors';
+import { Button, ParticleCelebration } from '../../components';
+import { Colors, Gradients } from '../../constants/Colors';
 import { Typography, FontFamily } from '../../constants/Typography';
 
 export default function SuccessScreen() {
   const router = useRouter();
+  const { txRef } = useLocalSearchParams<{ txRef?: string }>();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const checkAnim = useRef(new Animated.Value(0)).current;
   const contentAnim = useRef(new Animated.Value(30)).current;
+  const [showParticles, setShowParticles] = React.useState(false);
+
+  // Generate a fallback reference if none provided
+  const displayRef = txRef || `ONDO-${Date.now().toString(36).toUpperCase()}`;
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // Déclencher les particules immédiatement
+    setTimeout(() => setShowParticles(true), 100);
 
     Animated.sequence([
       Animated.parallel([
@@ -31,7 +39,8 @@ export default function SuccessScreen() {
   }, []);
 
   return (
-    <LinearGradient colors={['#4CAF50', '#388E3C']} style={s.container}>
+    <LinearGradient colors={[...Gradients.success]} style={s.container}>
+      <ParticleCelebration trigger={showParticles} />
       <View style={s.content}>
         <Animated.View style={[s.circle, { transform: [{ scale: scaleAnim }], opacity: fadeAnim }]}>
           <Animated.View style={{ transform: [{ scale: checkAnim }] }}>
@@ -40,16 +49,15 @@ export default function SuccessScreen() {
         </Animated.View>
 
         <Animated.View style={[s.textContainer, { opacity: fadeAnim, transform: [{ translateY: contentAnim }] }]}>
-          <Text style={s.title}>Transaction réussie ! 🎉</Text>
+          <Text style={s.title}>Bravo ! Transaction réussie ✨</Text>
           <Text style={s.subtitle}>
-            Votre opération a été effectuée avec succès.
-            Un reçu numérique est disponible dans votre historique.
+            Votre opération est confirmée. Le reçu est disponible dans votre historique.
           </Text>
         </Animated.View>
 
         <Animated.View style={[s.refCard, { opacity: fadeAnim, transform: [{ translateY: contentAnim }] }]}>
           <Text style={s.refLabel}>Référence</Text>
-          <Text style={s.refValue}>ONDO-2026033114300001</Text>
+          <Text style={s.refValue}>{displayRef}</Text>
         </Animated.View>
       </View>
 
@@ -58,10 +66,10 @@ export default function SuccessScreen() {
           title="Retour à l'accueil"
           onPress={() => router.replace('/(tabs)')}
           style={{ backgroundColor: Colors.white }}
-          textStyle={{ color: '#388E3C' }}
+          textStyle={{ color: Colors.accent }}
         />
         <Button
-          title="Voir le reçu"
+          title="Voir l'historique"
           onPress={() => router.replace('/(tabs)/history')}
           variant="ghost"
           textStyle={{ color: Colors.white }}

@@ -56,9 +56,9 @@ export default function WelcomeScreen() {
   }, []);
 
   const features = [
-    { icon: 'swap-horizontal' as const, text: 'Achetez du crédit inter-opérateurs' },
-    { icon: 'wallet' as const, text: 'Transferts d\'argent sans frais' },
-    { icon: 'shield-checkmark' as const, text: 'Transactions sécurisées' },
+    { icon: 'swap-horizontal' as const, text: 'Crédit inter-opérateurs instantané' },
+    { icon: 'flash' as const, text: 'Transactions sans frais cachés' },
+    { icon: 'heart' as const, text: 'Conçu pour le Tchad 🇹🇩' },
   ];
 
   return (
@@ -83,7 +83,7 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
           <Text style={styles.appName}>Ondo</Text>
-          <Text style={styles.tagline}>Vos transactions, zéro frais</Text>
+          <Text style={styles.tagline}>L'argent mobile, enfin fluide</Text>
         </Animated.View>
 
         {/* Features */}
@@ -129,8 +129,6 @@ export default function WelcomeScreen() {
           title="Commencer"
           onPress={() => router.push('/(auth)/phone')}
           variant="primary"
-          style={{ backgroundColor: Colors.warning }}
-          textStyle={{ color: Colors.white }}
         />
         <Text style={styles.disclaimer}>
           En continuant, vous acceptez nos conditions d'utilisation

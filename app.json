@@ -22,9 +22,13 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.ondo.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS"
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.SEND_SMS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "web": {
@@ -34,12 +38,27 @@
       "expo-router",
       "expo-font",
       "expo-contacts",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "extraMavenRepos": [
+              "https://maven.google.com"
+            ]
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "18dfc4ca-2b22-4889-911e-10b21b4c140c"
+        "projectId": "3c37011f-41a3-4aa4-b5b6-f88b9ae99cc6"
       }
     }
   }

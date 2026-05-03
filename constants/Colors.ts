@@ -1,55 +1,61 @@
 export const Colors = {
-  // Brand
-  primary: '#007BFF', // Bleu Primaire
-  primaryLight: '#66B2FF',
-  primaryDark: '#0056B3',
-  primaryGradientStart: '#007BFF',
-  primaryGradientEnd: '#0056B3',
+  // Brand - Inspiré des couleurs du Sahel au coucher de soleil
+  primary: '#D97706', // Ambre chaud
+  primaryLight: '#FBBF24', // Or soleil
+  primaryDark: '#B45309', // Terre brûlée
 
-  // Operators
+  // Accent - Énergique et optimiste
+  accent: '#059669', // Vert émeraude (croissance, nature)
+  accentLight: '#10B981',
+  accentBright: '#F59E0B', // Orange mandarine (énergie)
+
+  // Operators (conserver identité marque)
   airtel: '#E30613',
   airtelLight: '#FF5252',
   moov: '#0095DA',
   moovLight: '#4FC3F7',
 
   // Semantic
-  success: '#28A745', // Vert Secondaire
-  successLight: '#D4EDDA',
-  error: '#DC3545',
-  errorLight: '#F8D7DA',
-  warning: '#FFC107', // Orange d'Accent
-  warningLight: '#FFF3CD',
-  info: '#17A2B8',
+  success: '#059669', // Vert émeraude cohérent
+  successLight: '#D1FAE5',
+  error: '#DC2626',
+  errorLight: '#FEE2E2',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  info: '#0EA5E9',
 
-  // Neutral - White background with slightly green touches where needed
-  background: '#FFFFFF',
+  // Neutral - Chauds plutôt que gris froids
+  background: '#FFFBF5', // Blanc cassé chaud (pas blanc pur)
   surface: '#FFFFFF',
-  card: '#F8F9FA',
-  border: '#DEE2E6',
-  borderLight: '#F8F9FA',
-  divider: '#E9ECEF',
+  surfaceWarm: '#FEF3E2', // Surface avec touche d'ambre
+  card: '#FFFFFF',
+  border: '#E7E5E4',
+  borderLight: '#F5F5F4',
+  divider: '#F5F5F4',
 
-  // Text
-  textPrimary: '#343A40', // Gris Neutre
-  textSecondary: '#6C757D',
-  textTertiary: '#ADB5BD',
+  // Text - Contrastes riches
+  textPrimary: '#1C1917', // Presque noir chaud
+  textSecondary: '#57534E', // Gris chaud
+  textTertiary: '#A8A29E', // Gris clair chaud
   textOnPrimary: '#FFFFFF',
   textOnDark: '#FFFFFF',
-  textLink: '#007BFF',
+  textLink: '#D97706',
 
   // Misc
-  overlay: 'rgba(52, 58, 64, 0.65)',
-  shadow: 'rgba(0, 123, 255, 0.08)',
-  shimmer: '#E8E8E8',
+  overlay: 'rgba(28, 25, 23, 0.65)',
+  shadow: 'rgba(217, 119, 6, 0.12)', // Ombre ambre
+  shimmer: '#F5F5F4',
   white: '#FFFFFF',
-  black: '#000000',
+  black: '#1C1917',
   transparent: 'transparent',
 };
 
 export const Gradients = {
-  primary: ['#007BFF', '#0056B3'] as const,
-  header: ['#007BFF', '#004494'] as const,
-  card: ['#FFFFFF', '#F0FDF4'] as const, // Blanc avec touche de vert clair
-  splash: ['#FFFFFF', '#E8F5E9'] as const, // Blanc vers touche verte
-  action: ['#FFC107', '#E0A800'] as const,  // Orange
+  primary: ['#D97706', '#B45309'] as const, // Ambre sunset
+  header: ['#F59E0B', '#D97706'] as const, // Orange to Amber
+  card: ['#FFFFFF', '#FEF3E2'] as const, // Blanc avec touche d'ambre
+  splash: ['#FFFBF5', '#FEF3E2'] as const, // Blanc cassé vers ambre léger
+  action: ['#F59E0B', '#D97706'] as const, // Orange mandarine
+  success: ['#10B981', '#059669'] as const, // Vert énergique
+  celebration: ['#F59E0B', '#EF4444', '#8B5CF6'] as const, // Multicolor pour succès
 };

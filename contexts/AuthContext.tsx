@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User } from 'firebase/auth';
+// We import User from authService which now uses Native SDK types
 import {
   confirmPhoneOtp,
   signOut,
   onAuthStateChanged,
   savePhoneLocally,
   getStoredPhone,
+  User,
 } from '../services/authService';
 import {
   createUserProfile,
@@ -76,25 +77,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const cleanPhone = phone.replace(/\s/g, '');
       const operator = detectOperator(cleanPhone) || 'airtel';
 
-      // Confirm OTP
+      // Confirm OTP — this is the critical step
       const firebaseUser = await confirmPhoneOtp(verificationId, code);
 
-      // Create user profile in Firestore (merge/update if exists)
+      // Set user immediately so the app can navigate
+      setUser(firebaseUser);
+
+      // Create user profile in Firestore (non-blocking)
+      // If Firestore is temporarily offline, auth still works
       const profileData: CreateUserData = {
         displayName: displayName || `Utilisateur ${cleanPhone.slice(-4)}`,
         phone: cleanPhone,
         operator,
       };
 
-      await createUserProfile(firebaseUser.uid, profileData);
+      try {
+        await createUserProfile(firebaseUser.uid, profileData);
+        const profile = await getUserProfile(firebaseUser.uid);
+        setUserProfile(profile);
+      } catch (firestoreErr) {
+        console.warn('Firestore profile sync failed (will retry later):', firestoreErr);
+        // Set a minimal local profile so the UI can render
+        setUserProfile({
+          displayName: profileData.displayName,
+          phone: cleanPhone,
+          operator,
+          walletBalance: 0,
+        } as UserProfile);
+      }
 
-      // Save phone locally
-      await savePhoneLocally(cleanPhone);
-
-      // Load the created profile
-      const profile = await getUserProfile(firebaseUser.uid);
-      setUserProfile(profile);
-      setUser(firebaseUser);
+      // Save phone locally (non-blocking)
+      try {
+        await savePhoneLocally(cleanPhone);
+      } catch (storageErr) {
+        console.warn('Local phone save failed:', storageErr);
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;

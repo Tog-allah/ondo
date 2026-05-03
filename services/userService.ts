@@ -1,12 +1,7 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
+import firestoreModule, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from './firebase';
+
+export type Timestamp = FirebaseFirestoreTypes.Timestamp;
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -35,25 +30,25 @@ export const createUserProfile = async (
   userId: string,
   data: CreateUserData
 ): Promise<void> => {
-  const userRef = doc(db, 'users', userId);
+  const userRef = db.collection('users').doc(userId);
 
   // Check if profile already exists
-  const existing = await getDoc(userRef);
+  const existing = await userRef.get();
   if (existing.exists()) {
     // Update existing profile
-    await updateDoc(userRef, {
+    await userRef.update({
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: firestoreModule.FieldValue.serverTimestamp(),
     });
     return;
   }
 
   // Create new profile with initial wallet balance for demo
-  await setDoc(userRef, {
+  await userRef.set({
     ...data,
     walletBalance: 3500, // Solde initial de démo (XAF)
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    createdAt: firestoreModule.FieldValue.serverTimestamp(),
+    updatedAt: firestoreModule.FieldValue.serverTimestamp(),
   });
 };
 
@@ -63,10 +58,10 @@ export const createUserProfile = async (
 export const getUserProfile = async (
   userId: string
 ): Promise<UserProfile | null> => {
-  const userRef = doc(db, 'users', userId);
-  const snapshot = await getDoc(userRef);
+  const userRef = db.collection('users').doc(userId);
+  const snapshot = await userRef.get();
 
-  if (!snapshot.exists()) return null;
+  if (!snapshot.exists) return null;
   return snapshot.data() as UserProfile;
 };
 
@@ -77,10 +72,10 @@ export const updateUserProfile = async (
   userId: string,
   data: Partial<Pick<UserProfile, 'displayName' | 'phone' | 'operator'>>
 ): Promise<void> => {
-  const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, {
+  const userRef = db.collection('users').doc(userId);
+  await userRef.update({
     ...data,
-    updatedAt: serverTimestamp(),
+    updatedAt: firestoreModule.FieldValue.serverTimestamp(),
   });
 };
 
@@ -102,10 +97,10 @@ export const updateWalletBalance = async (
   userId: string,
   newBalance: number
 ): Promise<void> => {
-  const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, {
+  const userRef = db.collection('users').doc(userId);
+  await userRef.update({
     walletBalance: newBalance,
-    updatedAt: serverTimestamp(),
+    updatedAt: firestoreModule.FieldValue.serverTimestamp(),
   });
 };
 

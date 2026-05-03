@@ -1,11 +1,14 @@
 import { TextStyle } from 'react-native';
 
 export const FontFamily = {
-  regular: 'Inter-Regular',
-  medium: 'Inter-Medium',
-  semiBold: 'Inter-SemiBold',
-  bold: 'Inter-Bold',
-  black: 'Inter-Black',
+  // Plus Jakarta Sans pour le corps de texte (chaud, lisible)
+  regular: 'PlusJakartaSans-Regular',
+  medium: 'PlusJakartaSans-Medium',
+  semiBold: 'PlusJakartaSans-SemiBold',
+  bold: 'PlusJakartaSans-Bold',
+  // Pour les montants et titres importants (en attendant Clash Display)
+  display: 'PlusJakartaSans-Bold',
+  displayBlack: 'PlusJakartaSans-ExtraBold',
 };
 
 export const FontSize = {
@@ -32,7 +35,7 @@ export const LineHeight = {
 
 export const Typography: Record<string, TextStyle> = {
   display: {
-    fontFamily: FontFamily.black,
+    fontFamily: FontFamily.displayBlack,
     fontSize: FontSize.display,
     lineHeight: LineHeight.display,
   },
@@ -92,7 +95,7 @@ export const Typography: Record<string, TextStyle> = {
     lineHeight: LineHeight.xxxl,
   },
   amountLarge: {
-    fontFamily: FontFamily.black,
+    fontFamily: FontFamily.displayBlack,
     fontSize: FontSize.display,
     lineHeight: LineHeight.display,
   },

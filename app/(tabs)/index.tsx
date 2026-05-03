@@ -9,6 +9,7 @@ import {
   FlatList,
   Dimensions,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,9 +19,12 @@ import { Colors, Gradients } from '../../constants/Colors';
 import { Typography, FontFamily } from '../../constants/Typography';
 import { Layout, Shadows } from '../../constants/Layout';
 import { formatCurrency } from '../../constants';
+import { OperatorImages } from '../../constants/OperatorImages';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApp } from '../../contexts/AppContext';
-import { Timestamp } from 'firebase/firestore';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+
+type Timestamp = FirebaseFirestoreTypes.Timestamp;
 
 const { width } = Dimensions.get('window');
 
@@ -74,8 +78,8 @@ export default function HomeScreen() {
       id: 'credit',
       icon: 'phone-portrait' as const,
       label: 'Acheter\nCrédit',
-      color: '#8B5CF6',
-      bgColor: '#F3EEFF',
+      color: Colors.primary,
+      bgColor: Colors.surfaceWarm,
       route: '/transaction/buy-credit',
       enabled: true,
     },
@@ -83,8 +87,8 @@ export default function HomeScreen() {
       id: 'bundle',
       icon: 'wifi' as const,
       label: 'Acheter\nForfait',
-      color: '#3B82F6',
-      bgColor: '#EFF6FF',
+      color: Colors.accent,
+      bgColor: Colors.accent + '15',
       route: '/transaction/buy-bundle',
       enabled: true,
     },
@@ -92,8 +96,8 @@ export default function HomeScreen() {
       id: 'transfer',
       icon: 'swap-horizontal' as const,
       label: 'Transférer\nArgent',
-      color: '#94A3B8',
-      bgColor: '#F1F5F9',
+      color: Colors.textTertiary,
+      bgColor: Colors.borderLight,
       route: '/transaction/transfer',
       enabled: false, // Coming Soon
     },
@@ -101,8 +105,8 @@ export default function HomeScreen() {
       id: 'bill',
       icon: 'document-text' as const,
       label: 'Payer\nFacture',
-      color: '#94A3B8',
-      bgColor: '#F1F5F9',
+      color: Colors.textTertiary,
+      bgColor: Colors.borderLight,
       route: '/transaction/buy-credit',
       enabled: false, // Coming Soon
     },
@@ -164,7 +168,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Promo Banner instead of Wallet */}
+        {/* Promo Banner */}
         <Animated.View
           style={[
             styles.promoCard,
@@ -175,13 +179,17 @@ export default function HomeScreen() {
           ]}
         >
           <View style={styles.promoContent}>
-            <Text style={styles.promoTitle}>🇹🇩 Zéro frais Ondo</Text>
+            <Text style={styles.promoTitle}>🇹🇩 100% Sans Frais</Text>
             <Text style={styles.promoDesc}>
-              Achetez du crédit et des forfaits pour Airtel et Moov Africa sans aucun frais supplémentaire !
+              Crédit et forfaits Airtel & Moov Africa. Zéro frais cachés, toujours.
             </Text>
+            <View style={styles.promoLogos}>
+              <Image source={OperatorImages.airtel.logo} style={styles.promoLogoImg} resizeMode="contain" />
+              <Image source={OperatorImages.moov.logo} style={styles.promoLogoImg} resizeMode="contain" />
+            </View>
           </View>
           <View style={styles.promoIcon}>
-            <Ionicons name="gift" size={32} color={Colors.primaryLight} />
+            <Ionicons name="flash" size={32} color={Colors.primary} />
           </View>
         </Animated.View>
       </LinearGradient>
@@ -255,14 +263,10 @@ export default function HomeScreen() {
                 <Text style={styles.beneficiaryName} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <View
-                  style={[
-                    styles.operatorDot,
-                    {
-                      backgroundColor:
-                        item.operator === 'airtel' ? Colors.airtel : Colors.moov,
-                    },
-                  ]}
+                <Image
+                  source={OperatorImages[item.operator as 'airtel' | 'moov']?.logo}
+                  style={styles.operatorLogo}
+                  resizeMode="contain"
                 />
               </TouchableOpacity>
             )}
@@ -408,11 +412,21 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 18,
   },
+  promoLogos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  promoLogoImg: {
+    width: 28,
+    height: 28,
+  },
   promoIcon: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.primary + '10',
+    backgroundColor: Colors.surfaceWarm,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 16,
@@ -509,10 +523,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     textAlign: 'center',
   },
-  operatorDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  operatorLogo: {
+    width: 16,
+    height: 16,
     marginTop: 4,
   },
   txRow: {

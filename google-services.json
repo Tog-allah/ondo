@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "15795729641",
+    "project_id": "ondo-app-td",
+    "storage_bucket": "ondo-app-td.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:15795729641:android:f324bc95054da7eedb6c78",
+        "android_client_info": {
+          "package_name": "com.ondo.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "15795729641-dkobqvmneclc4mplufdf35d4kf40tkdh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLWruoq7T9GmlRr0VGiUgK7h1xPaho7DI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "15795729641-dkobqvmneclc4mplufdf35d4kf40tkdh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,7 @@ import { Colors, Gradients } from '../../constants/Colors';
 import { Typography, FontFamily } from '../../constants/Typography';
 import { Layout } from '../../constants/Layout';
 import { formatCurrency } from '../../constants';
+import { OperatorImages } from '../../constants/OperatorImages';
 
 const deals = [
   { id: '1', title: 'Forfait Weekend', desc: '3 Go pour tout le weekend', op: 'airtel' as const, price: 1000, orig: 1500, badge: 'Populaire', validity: '2 jours', icon: 'wifi' as const },
@@ -30,9 +31,15 @@ export default function DealsScreen() {
       </LinearGradient>
 
       <View style={s.filterRow}>
-        {([['all','Tous'],['airtel','Airtel'],['moov','Moov Africa']] as const).map(([k,l]) => (
+        <TouchableOpacity onPress={() => setSelOp('all')} style={[s.fBtn, selOp==='all' && s.fBtnA]}>
+          <Text style={[s.fTxt, selOp==='all' && s.fTxtA]}>Tous</Text>
+        </TouchableOpacity>
+        {(['airtel', 'moov'] as const).map((k) => (
           <TouchableOpacity key={k} onPress={() => setSelOp(k)} style={[s.fBtn, selOp===k && s.fBtnA]}>
-            <Text style={[s.fTxt, selOp===k && s.fTxtA]}>{l}</Text>
+            <Image source={OperatorImages[k].logo} style={{width:18,height:18}} resizeMode="contain" />
+            <Text style={[s.fTxt, selOp===k && s.fTxtA]}>
+              {k === 'airtel' ? 'Airtel' : 'Moov Africa'}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -100,7 +107,7 @@ const s = StyleSheet.create({
   hTitle:{...Typography.h2,color:Colors.white},
   hSub:{...Typography.body,color:'rgba(255,255,255,0.7)',marginTop:4},
   filterRow:{flexDirection:'row',paddingHorizontal:24,paddingVertical:16,gap:8},
-  fBtn:{paddingHorizontal:16,paddingVertical:8,borderRadius:20,backgroundColor:Colors.surface,borderWidth:1,borderColor:Colors.border},
+  fBtn:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:16,paddingVertical:8,borderRadius:20,backgroundColor:Colors.surface,borderWidth:1,borderColor:Colors.border},
   fBtnA:{backgroundColor:Colors.primary,borderColor:Colors.primary},
   fTxt:{...Typography.captionMedium,color:Colors.textSecondary},
   fTxtA:{color:Colors.white},
